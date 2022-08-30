@@ -203,7 +203,21 @@ class ModelConverterBase:
     ) -> List[Tuple[str, Any]]:
         target_model = prop.mapper.class_
         pk = get_primary_key(target_model)
-        stmt = select(target_model)
+        thing_relations = sqlalchemy_inspect(target_model).relationships.items()
+        stmt = select(target_model, *[x[1].mapper.class_ for x in thing_relations]).select_from(target_model)
+
+        for relation in thing_relations:
+            primary_key = get_primary_key(relation[1].mapper.class_)
+            for remote_side in relation[1].remote_side:
+                stmt = stmt.join(relation[1].mapper.class_)
+
+        for relation in thing_relations:
+            try:
+                stmt = stmt.options(contains_eager(relation[1].mapper.class_))
+            except TypeError:
+                pass
+            except ArgumentError:
+                pass
 
         if isinstance(engine, Engine):
             with Session(engine) as session:
@@ -217,7 +231,7 @@ class ModelConverterBase:
                 objects = await session.execute(stmt)
                 return [
                     (self._get_pk_value(obj, pk), str(obj))
-                    for obj in objects.scalars().all()
+                    for obj in objects.scalars().unique().all()
                 ]
 
         return []  # pragma: nocover
