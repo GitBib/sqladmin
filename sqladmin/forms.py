@@ -1,3 +1,4 @@
+import contextlib
 import inspect
 import sys
 from enum import Enum
@@ -18,8 +19,10 @@ from typing import (
 import anyio
 from sqlalchemy import Boolean, inspect as sqlalchemy_inspect, select
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import ArgumentError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlalchemy.orm import ColumnProperty, RelationshipProperty, Session
+from sqlalchemy.orm.strategy_options import contains_eager
 from sqlalchemy.sql.schema import Column
 from wtforms import (
     BooleanField,
@@ -203,8 +206,15 @@ class ModelConverterBase:
     ) -> List[Tuple[str, Any]]:
         target_model = prop.mapper.class_
         pk = get_primary_key(target_model)
-        stmt = select(target_model).limit(100)
+        thing_relations = sqlalchemy_inspect(target_model).relationships.items()
+        stmt = select(target_model, *[x[1].mapper.class_ for x in thing_relations]).select_from(target_model).limit(100)
 
+        for relation in thing_relations:
+            stmt = stmt.join(relation[1].mapper.class_)
+
+        for relation in thing_relations:
+            with contextlib.suppress(TypeError, ArgumentError):
+                stmt = stmt.options(contains_eager(relation[1].mapper.class_))
         if isinstance(engine, Engine):
             with Session(engine) as session:
                 objects = await anyio.to_thread.run_sync(session.execute, stmt)
@@ -217,7 +227,7 @@ class ModelConverterBase:
                 objects = await session.execute(stmt)
                 return [
                     (self._get_pk_value(obj, pk), str(obj))
-                    for obj in objects.scalars().all()
+                    for obj in objects.scalars().unique().all()
                 ]
 
         return []  # pragma: nocover
