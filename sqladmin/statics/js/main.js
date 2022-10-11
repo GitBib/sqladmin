@@ -52,7 +52,7 @@ $(document).on('keypress', '#search-input', function (e) {
 });
 
 // Date picker
-$(':input[data-role="datepicker"]:not([readonly])').each(function () {
+$(':input[data-role="datepicker"]').each(function () {
   $(this).flatpickr({
     enableTime: false,
     allowInput: true,
@@ -61,7 +61,7 @@ $(':input[data-role="datepicker"]:not([readonly])').each(function () {
 });
 
 // DateTime picker
-$(':input[data-role="datetimepicker"]:not([readonly])').each(function () {
+$(':input[data-role="datetimepicker"]').each(function () {
   $(this).flatpickr({
     enableTime: true,
     allowInput: true,
@@ -72,7 +72,7 @@ $(':input[data-role="datetimepicker"]:not([readonly])').each(function () {
 });
 
 // Time picker
-$(':input[data-role="timepicker"]:not([readonly])').each(function () {
+$(':input[data-role="timepicker"]').each(function () {
   $(this).flatpickr({
     noCalendar: true,
     enableTime: true,
@@ -106,30 +106,4 @@ $(':input[data-role="select2-ajax"]').each(function () {
     var option = new Option(data.text, data.id, true, true);
     $(this).append(option).trigger('change');
   }
-});
-
-// Checkbox select
-$("#select-all").click(function () {
-  $('input.select-box:checkbox').prop('checked', this.checked);
-});
-
-// Bulk delete
-$("#action-delete").click(function () {
-  var pks = [];
-  $('.select-box').each(function () {
-    if ($(this).is(':checked')) {
-      pks.push($(this).parent().siblings().get(0).value);
-    }
-  });
-
-  $.ajax({
-    url: $(this).attr('data-url') + '?pks=' + pks.join(","),
-    method: 'DELETE',
-    success: function (result) {
-      window.location.href = result;
-    },
-    error: function (request, status, error) {
-      alert(request.responseText);
-    }
-  });
 });

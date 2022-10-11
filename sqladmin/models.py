@@ -625,6 +625,21 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         ```
     """
 
+    form_ajax_refs: ClassVar[Dict[str, dict]] = {}
+    """Use AJAX for foreign key model loading.
+    Should contain dictionary, where key is field name and
+    value is a dictionary which configures AJAX lookups.
+
+    ???+example
+        ```python
+        class UserAdmin(ModelAdmin, model=User):
+            form_ajax_refs = {
+                'address': {
+                    'fields': ('street', 'zip_code'),
+                }
+            }
+    """
+
     def __init__(self) -> None:
         self._mapper = inspect(self.model)
         self._relations = get_relationships(self.model)

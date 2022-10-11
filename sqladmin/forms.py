@@ -1,3 +1,4 @@
+import contextlib
 import inspect
 import sys
 from enum import Enum
@@ -226,7 +227,7 @@ class ModelConverterBase:
                 objects = await session.execute(stmt)
                 return [
                     (self._get_pk_value(obj, pk), str(obj))
-                    for obj in objects.scalars().all()
+                    for obj in objects.scalars().unique().all()
                 ]
 
         return []  # pragma: nocover
